@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd 
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd">
+
+    <apikit:config name="odata-customer-config" api="resource::27fe0a56-db9b-4689-9aa6-e91a7905d6a9:odata-customer:1.0.2:raml:zip:odata-customer.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+    <flow name="odata-customer-main">
+        <http:listener config-ref="odata-customer-httpListenerConfig" path="/api/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:router config-ref="odata-customer-config" />
+        <error-handler>
+            <on-error-propagate type="APIKIT:BAD_REQUEST">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Bad request"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">400</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:METHOD_NOT_ALLOWED">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Method not allowed"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">405</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_ACCEPTABLE">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Not acceptable"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">406</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:UNSUPPORTED_MEDIA_TYPE">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Unsupported media type"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">415</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_IMPLEMENTED">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Not Implemented"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">501</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="get:\customers:odata-customer-config">
+		<logger level="INFO" doc:name="Logger" doc:id="1bf3caf9-fa1c-4d51-8876-e725d4b9ec5e" message="Customers" />
+		<ee:transform  doc:id="f45cbd4e-89e1-4a7d-afd7-330e6474f976" doc:name="SQL Query Creation">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/java
+
+var fieldMappings = {
+	nameOfCompany: "CompanyName",
+	nameOfContact: "ContactName",
+	titleOfContact: "ContactTitle",
+	customerIdentifier: "CustomerID"
+}
+
+var entityFields = fieldMappings pluck $
+
+var queryParams = attributes.queryParams default {}
+
+var select : String = queryParams.select match {
+	case select is String -> select
+	else -> ""
+}
+
+var filter : String = queryParams.filter match {
+	case filter is String -> filter
+	else -> ""
+}
+
+// Generate the fields you need in the query. 
+var generateSqlFields = (select) -> (
+        (
+            if (select != "" )
+                ( (select splitBy ",")) 
+            else 
+                entityFields
+        )  map (
+            if (isEmpty(fieldMappings[$])) 
+                "$" 
+            else 
+                fieldMappings[$] as String ) joinBy ", ")
+
+
+var odataFilterFieldsToEntityFields = (odataFilter) ->  (
+    odataFilter splitBy (" ") map (
+        if (isEmpty(fieldMappings[$]))
+            ($ as String)
+        else 
+            fieldMappings[$] as String
+    ) joinBy " "
+)
+// Transform oDataFilters into MySQL Filters
+var odataFilterToSQLFilter = (odataFilter) -> 
+	  
+	 odataFilter replace "eq null" with "is null" 
+	 replace "ne null" with "is not null" 
+	 replace " eq " with " = " 
+	 replace " ne " with " != " 
+	 replace " gt " with " > " 
+	 replace " lt " with " < " 
+	 replace " ge " with " >= " 
+	 replace " le " with " <= " 
+	 replace " and " with " AND " 
+	 replace " or " with " OR "
+
+var toSQLWhere = (odataFilter) -> if(odataFilter !=  "") " WHERE " ++ odataFilterToSQLFilter(odataFilterFieldsToEntityFields(odataFilter)) else ""
+---
+"SELECT " ++ generateSqlFields(select) ++ " FROM Customers"
+ ++ ( 
+ 	(toSQLWhere(filter)) 	
+ ) ]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<flow-ref doc:name="Common-logger" doc:id="62630657-93eb-4033-8bed-6cb510ca39b3" name="common-logger" />
+		<db:select doc:name="Select" doc:id="eb9b10df-a70c-4327-b41d-a017aa4da3c4" config-ref="Database_Config">
+			<db:sql><![CDATA[#[payload]]]></db:sql>
+		</db:select>
+		<flow-ref doc:name="Common-logger" doc:id="360e9dfb-4664-4ca0-861a-4da5e4c83663" name="common-logger" />
+		<ee:transform doc:name="Response Transform" doc:id="2b5cd26a-0bbb-4d06-a11c-c3c34743f42f">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+
+var fieldMappings = {
+	nameOfCompany: "CompanyName",
+	nameOfContact: "ContactName",
+	titleOfContact: "ContactTitle",
+	customerIdentifier: "CustomerID"
+}
+
+var reverseMappings = fieldMappings mapObject ( ($) : $$ )
+---
+payload map (
+	
+	$ mapObject {
+		(reverseMappings[$$]) : $		
+	}
+	
+)]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+    </flow>   
+	<sub-flow name="common-logger" doc:id="d685b124-f51a-4594-b439-58572d0b100e" >
+		<logger level="INFO" doc:name="Log Payload" doc:id="fb1b1c35-7f3e-459c-8d69-c5ce97eea33e" message='#[write(payload, "application/json")]' />
+		<logger level="INFO" doc:name="Log attributes" doc:id="f59b4367-8fc2-4878-b4d8-278dbbdedcc2" message='#[write (attributes, "application/json")]' />
+	</sub-flow> 
+</mule>
